@@ -1,7 +1,8 @@
 package de.rochdi.lernportal_backend.repository;
 
-import de.rochdi.lernportal_backend.model.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface CourseRepository extends JpaRepository<Course, Long> {
+import de.rochdi.lernportal_backend.entity.CourseEntity;
+
+public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
 }

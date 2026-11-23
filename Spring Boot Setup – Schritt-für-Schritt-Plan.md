@@ -2,11 +2,13 @@
 
 Backend-Setup für das Lernportal-Projekt (Java/Spring Boot/Gradle/PostgreSQL)
 
-## 1. Spring Initializr – Einstellungen
+> **Hinweis:** Dieses Dokument beschreibt den **tatsächlichen Stand** des Projekts im Ordner `lernportal-backend/`. Alle Pfade sind relativ zum Projekt-Root (`/home/casa/AI_Project/JavaAngular/`).
 
-Gehe auf https://start.spring.io und wähle:
+## 1. Spring Initializr – Einstellungen (bereits erledigt)
 
-- **Project:** Gradle - Groovy (oder Kotlin DSL, falls du das bevorzugst)
+Das Projekt wurde bereits mit Spring Initializr erstellt. Falls du es neu erstellst, wähle:
+
+- **Project:** Gradle - Kotlin DSL (KTS)
 - **Language:** Java
 - **Spring Boot:** die aktuelle stabile Version (kein SNAPSHOT)
 - **Project Metadata:**
@@ -14,7 +16,7 @@ Gehe auf https://start.spring.io und wähle:
   - Artifact: `lernportal-backend`
   - Name: `lernportal-backend`
   - Description: `Backend für das Programmier-Lernportal`
-  - Package name: wird automatisch aus Group+Artifact gebildet (z. B. `de.rochdi.lernportal`)
+  - Package name: `de.rochdi.lernportal_backend`
   - Packaging: **Jar**
   - Java: **21**
 
@@ -29,37 +31,47 @@ Gehe auf https://start.spring.io und wähle:
 
 Danach auf **GENERATE** klicken → ein ZIP wird heruntergeladen.
 
-## 2. Projekt entpacken und in VSCode öffnen
+## 2. Projekt entpacken und in VSCode öffnen (bereits vorhanden)
 
-1. ZIP entpacken in deinen Projektordner, z. B. `~/projekte/lernportal-backend`
-2. VSCode öffnen → `File > Open Folder` → den entpackten Ordner wählen
-3. VSCode erkennt das Gradle-Projekt automatisch (Extension "Gradle for Java" muss installiert sein) und importiert es
-4. Warten, bis unten rechts "Java: Ready" bzw. die Gradle-Synchronisation abgeschlossen ist
+Das Projekt wurde bereits in `lernportal-backend/` entpackt und ist in VSCode importiert.
 
-### Wichtige Ordnerstruktur, die danach existiert
+### Wichtige Ordnerstruktur (tatsächlich vorhanden)
 
 ```
 lernportal-backend/
-├── build.gradle
-├── settings.gradle
+├── build.gradle.kts
+├── settings.gradle.kts
 ├── gradlew / gradlew.bat   (Gradle Wrapper - kein lokales Gradle nötig)
 └── src/
     ├── main/
-    │   ├── java/de/rochdi/lernportal/
-    │   │   └── LernportalBackendApplication.java
+    │   ├── java/
+    │   │   └── de/rochdi/lernportal_backend/
+    │   │       ├── LernportalBackendApplication.java
+    │   │       ├── config/
+    │   │       │   └── CorsConfig.java
+    │   │       ├── controller/
+    │   │       │   └── CourseController.java
+    │   │       ├── model/
+    │   │       │   └── Course.java
+    │   │       └── repository/
+    │   │           └── CourseRepository.java
     │   └── resources/
     │       └── application.properties
     └── test/
+        └── java/
+            └── de/rochdi/lernportal_backend/
+                └── LernportalBackendApplicationTests.java
 ```
 
-## 3. Datenbankverbindung konfigurieren
+## 3. Datenbankverbindung konfigurieren (bereits in `application.properties`)
 
-In `src/main/resources/application.properties` folgendes eintragen (Werte an deinen Docker-PostgreSQL-Container anpassen):
+Datei: `lernportal-backend/src/main/resources/application.properties`
 
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/lernportal
-spring.datasource.username=lernportal_user
-spring.datasource.password=dein_passwort
+spring.application.name=lernportal-backend
+spring.datasource.url=jdbc:postgresql://localhost:5432/learning_dashboard
+spring.datasource.username=learning_user
+spring.datasource.password=learning_pass
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # Hibernate
@@ -79,19 +91,19 @@ Hinweis zu `ddl-auto`:
 Falls deine Datenbank/User im Docker-Container noch nicht existieren, vorher im Container anlegen:
 
 ```sql
-CREATE DATABASE lernportal;
-CREATE USER lernportal_user WITH ENCRYPTED PASSWORD 'dein_passwort';
-GRANT ALL PRIVILEGES ON DATABASE lernportal TO lernportal_user;
+CREATE DATABASE learning_dashboard;
+CREATE USER learning_user WITH ENCRYPTED PASSWORD 'learning_pass';
+GRANT ALL PRIVILEGES ON DATABASE learning_dashboard TO learning_user;
 ```
 
-## 4. CORS für Angular-Frontend erlauben
+## 4. CORS für Angular-Frontend erlauben (bereits in `CorsConfig.java`)
 
 Damit später dein Angular-Frontend (Port 4200) die API (Port 8080) ansprechen darf, eine Konfigurationsklasse anlegen:
 
-`src/main/java/de/rochdi/lernportal/config/CorsConfig.java`
+Datei: `lernportal-backend/src/main/java/de/rochdi/lernportal_backend/config/CorsConfig.java`
 
 ```java
-package de.rochdi.lernportal.config;
+package de.rochdi.lernportal_backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -117,10 +129,10 @@ public class CorsConfig {
 
 ## 5. Erste Entity, Repository, Service, Controller (Beispiel: Course)
 
-**Entity** – `src/main/java/de/rochdi/lernportal/model/Course.java`
+**Entity** – `lernportal-backend/src/main/java/de/rochdi/lernportal_backend/model/Course.java`
 
 ```java
-package de.rochdi.lernportal.model;
+package de.rochdi.lernportal_backend.model;
 
 import jakarta.persistence.*;
 
@@ -139,25 +151,25 @@ public class Course {
 }
 ```
 
-**Repository** – `repository/CourseRepository.java`
+**Repository** – `lernportal-backend/src/main/java/de/rochdi/lernportal_backend/repository/CourseRepository.java`
 
 ```java
-package de.rochdi.lernportal.repository;
+package de.rochdi.lernportal_backend.repository;
 
-import de.rochdi.lernportal.model.Course;
+import de.rochdi.lernportal_backend.model.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
 }
 ```
 
-**Controller** – `controller/CourseController.java`
+**Controller** – `lernportal-backend/src/main/java/de/rochdi/lernportal_backend/controller/CourseController.java`
 
 ```java
-package de.rochdi.lernportal.controller;
+package de.rochdi.lernportal_backend.controller;
 
-import de.rochdi.lernportal.model.Course;
-import de.rochdi.lernportal.repository.CourseRepository;
+import de.rochdi.lernportal_backend.model.Course;
+import de.rochdi.lernportal_backend.repository.CourseRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -208,4 +220,4 @@ public class CourseController {
 
 - Weitere Entities analog anlegen: Module, Section, Quiz, Question, Answer
 - DTOs statt Entities direkt in der API zurückgeben (sauberere Trennung)
-- Angular-Projekt generieren und an diese API anbinden
+- Angular-Projekt generieren und an diese API anbinden (siehe `Nächste Schritte – Lernportal.md`)

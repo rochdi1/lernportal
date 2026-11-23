@@ -2,9 +2,11 @@
 
 Angular-Frontend (Standalone, Angular 22) aufsetzen und an das Spring-Boot-Backend anbinden
 
-## 1. Angular-Projekt generieren
+> **Hinweis:** Dieses Dokument beschreibt den **tatsächlichen Stand** des Projekts im Ordner `lernportal-frontend/`. Alle Pfade sind relativ zum Projekt-Root (`/home/casa/AI_Project/JavaAngular/`).
 
-Im Terminal (außerhalb des Backend-Ordners):
+## 1. Angular-Projekt generieren (bereits erledigt)
+
+Das Projekt wurde bereits mit Angular CLI 22.3.0 erstellt:
 
 ```bash
 ng new lernportal-frontend --routing --style=scss
@@ -12,44 +14,48 @@ cd lernportal-frontend
 ng serve
 ```
 
-- `--routing` → legt `src/app/app.routes.ts` an (Routing-Konfiguration für Standalone-App)
+- `--routing` → legt `lernportal-frontend/src/app/app.routes.ts` an (Routing-Konfiguration für Standalone-App)
 - `--style=scss` → SCSS statt reinem CSS
-- Standardmäßig läuft die App danach auf `http://localhost:4200`
-- Angular 22 erzeugt standardmäßig **Standalone-Components** (kein `AppModule` / `app.module.ts` mehr)
+- Standardmäßig läuft die App auf `http://localhost:4200`
+- Angular 22 erzeugt standardmäßig **Standalone-Components** (kein `AppModule` / `app.module.ts`)
 
-## 2. Projektstruktur anlegen
+## 2. Projektstruktur (bereits angelegt)
 
-In Angular 22 werden keine `NgModule`s mehr erzeugt. Stattdessen legt man einfach Ordner an und verwendet Standalone-Komponenten / -Services:
-
-```bash
-mkdir -p src/app/core/services
-mkdir -p src/app/shared/models
-mkdir -p src/app/features/courses
-mkdir -p src/app/features/quiz
-mkdir -p src/app/features/admin
-```
-
-Empfohlene Ordnerstruktur:
+Die folgende Struktur existiert bereits in `lernportal-frontend/src/app/`:
 
 ```
-src/app/
-├── app.config.ts         (ApplicationConfig mit Providern, ersetzt AppModule)
-├── app.routes.ts         (Routing-Konfiguration, ersetzt app-routing.module.ts)
-├── app.ts                (Root Standalone-Component)
+lernportal-frontend/src/app/
+├── app.config.ts              (ApplicationConfig mit Providern, ersetzt AppModule)
+├── app.config.server.ts       (Server-seitige Config für SSR)
+├── app.routes.ts              (Routing-Konfiguration, ersetzt app-routing.module.ts)
+├── app.routes.server.ts       (Server-seitige Routen)
+├── app.ts                     (Root Standalone-Component: class App)
+├── app.html                   (Template der Root-Component – enthält <router-outlet>)
+├── app.scss                   (Styles der Root-Component)
+├── app.spec.ts                (Unit-Test für App)
+├── main.ts                    (Bootstrap der Standalone-App: bootstrapApplication)
+├── main.server.ts             (Server-Entry für SSR)
 ├── core/
-│   └── services/         (Services, Guards, Interceptors - einmalig geladen)
+│   └── services/
+│       └── course.service.ts  (CourseService mit providedIn: 'root')
 ├── shared/
-│   └── models/           (TypeScript-Interfaces)
+│   └── models/
+│       └── course.model.ts    (TypeScript-Interface Course)
 ├── features/
-│   ├── courses/          (Kursliste, Lektionsansicht)
-│   ├── quiz/             (Quiz-Komponente)
-│   └── admin/            (CRUD-Verwaltung der Inhalte)
-└── main.ts               (Bootstrap der Standalone-App)
+│   ├── courses/
+│   │   └── course-list/
+│   │       ├── course-list.ts         (Standalone-Component: class CourseList)
+│   │       ├── course-list.html       (Template mit *ngFor)
+│   │       ├── course-list.scss       (Styles)
+│   │       └── course-list.spec.ts    (Unit-Test)
+│   ├── quiz/                  (leer – für spätere Quiz-Komponente)
+│   └── admin/                 (leer – für spätere Admin-Komponente)
+└── server.ts                  (Express-Server für SSR)
 ```
 
-## 3. HttpClient einbinden
+## 3. HttpClient einbinden (bereits in `app.config.ts`)
 
-In `src/app/app.config.ts` (statt `app.module.ts`):
+Datei: `lernportal-frontend/src/app/app.config.ts`
 
 ```typescript
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
@@ -63,14 +69,14 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideClientHydration(),
-    provideHttpClient()   // <-- HttpClient für Backend-Aufrufe
+    provideHttpClient()   // HttpClient für Backend-Aufrufe
   ]
 };
 ```
 
-## 4. Models (TypeScript-Interfaces) anlegen
+## 4. Models (TypeScript-Interfaces)
 
-`src/app/shared/models/course.model.ts`
+Datei: `lernportal-frontend/src/app/shared/models/course.model.ts`
 
 ```typescript
 export interface Course {
@@ -82,7 +88,7 @@ export interface Course {
 
 ## 5. Service zur Anbindung ans Backend
 
-`src/app/core/services/course.service.ts`
+Datei: `lernportal-frontend/src/app/core/services/course.service.ts`
 
 ```typescript
 import { Injectable } from '@angular/core';
@@ -114,27 +120,24 @@ export class CourseService {
 }
 ```
 
-## 6. Erste Komponente: Kursliste
+## 6. Erste Komponente: Kursliste (bereits vorhanden)
 
-```bash
-ng generate component features/courses/course-list --standalone
-```
-
-`course-list.component.ts`
+Datei: `lernportal-frontend/src/app/features/courses/course-list/course-list.ts`
 
 ```typescript
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { CourseService } from '../../../core/services/course.service';
 import { Course } from '../../../shared/models/course.model';
+import { CourseService } from '../../../core/services/course.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
+  imports: [CommonModule],
   selector: 'app-course-list',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './course-list.component.html'
+  styleUrl: './course-list.scss',
+  templateUrl: './course-list.html',
 })
-export class CourseListComponent implements OnInit {
+export class CourseList implements OnInit {
   courses: Course[] = [];
 
   constructor(private courseService: CourseService) {}
@@ -145,9 +148,10 @@ export class CourseListComponent implements OnInit {
 }
 ```
 
-`course-list.component.html`
+Template: `lernportal-frontend/src/app/features/courses/course-list/course-list.html`
 
 ```html
+<p>course-list works!</p>
 <ul>
   <li *ngFor="let course of courses">
     {{ course.title }} – {{ course.description }}
@@ -155,26 +159,35 @@ export class CourseListComponent implements OnInit {
 </ul>
 ```
 
-## 7. Routing einrichten
+**Wichtige Unterschiede zur Angular-CLI-Standardbenennung:**
+- Dateiname: `course-list.ts` (nicht `course-list.component.ts`)
+- Klassenname: `CourseList` (nicht `CourseListComponent`)
+- Template: `course-list.html` (nicht `course-list.component.html`)
 
-In `src/app/app.routes.ts`:
+## 7. Routing einrichten (bereits in `app.routes.ts`)
+
+Datei: `lernportal-frontend/src/app/app.routes.ts`
 
 ```typescript
 import { Routes } from '@angular/router';
-import { CourseListComponent } from './features/courses/course-list.component';
+import { CourseList } from './features/courses/course-list/course-list';
 
 export const routes: Routes = [
-  { path: 'courses', component: CourseListComponent },
+  { path: 'courses', component: CourseList },
   { path: '', redirectTo: '/courses', pathMatch: 'full' }
 ];
 ```
 
+Root-Template `app.html` enthält bereits `<router-outlet />` am Ende der Datei.
+
 ## 8. Testen
 
-1. Backend starten (`./gradlew bootRun` im Backend-Ordner)
-2. Frontend starten (`ng serve` im Frontend-Ordner)
+1. Backend starten (`./gradlew bootRun` im `lernportal-backend/`-Ordner)
+2. Frontend starten (`ng serve` im `lernportal-frontend/`-Ordner)
 3. Browser: `http://localhost:4200/courses`
 4. Prüfen, ob die Kursliste vom Backend geladen wird (Browser-Konsole/Network-Tab bei Fehlern checken, meist CORS)
+
+> **Wichtig:** Die Datei `app.html` enthält noch die komplette Angular-Platzhalter-Seite (Zeilen 1–343). Die Kursliste wird **unterhalb** dieser Seite gerendert. Um die Liste sofort sichtbar zu machen, in `app.html` alles bis auf `<router-outlet />` löschen.
 
 ## 9. Danach: Quiz-Komponente
 

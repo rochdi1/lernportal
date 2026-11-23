@@ -17,3 +17,5 @@ gradlew/
 # IDE
 .vscode/
 .idea/
+
+*history*

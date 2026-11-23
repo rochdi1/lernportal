@@ -1,4 +1,4 @@
-package de.rochdi.lernportal_backend.model;
+package de.rochdi.lernportal_backend.entity;
 
 import jakarta.persistence.*;
 
@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "course")
-public class Course {
+public class CourseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

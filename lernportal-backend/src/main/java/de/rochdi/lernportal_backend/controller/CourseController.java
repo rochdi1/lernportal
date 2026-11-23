@@ -1,49 +1,45 @@
 package de.rochdi.lernportal_backend.controller;
 
+import de.rochdi.lernportal_backend.dto.CourseDto;
+import de.rochdi.lernportal_backend.service.CourseService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import de.rochdi.lernportal_backend.model.Course;
-import de.rochdi.lernportal_backend.repository.CourseRepository;
-import lombok.Setter;
-
-@Setter
 @RestController
 @RequestMapping("/api/courses")
 public class CourseController {
 
-    private final CourseRepository repository;
+    private final CourseService service;
 
-    public CourseController(CourseRepository repository) {
-        this.repository = repository;
+    public CourseController(CourseService service) {
+        this.service = service;
     }
 
     @GetMapping
-    public List<Course> getAll() {
-        return repository.findAll();
+    public List<CourseDto> getAll() {
+        return service.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CourseDto> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    public Course create(@RequestBody Course course) {
-        return repository.save(course);
+    public ResponseEntity<CourseDto> create(@RequestBody CourseDto dto) {
+        return ResponseEntity.status(201).body(service.create(dto));
     }
 
     @PutMapping("/{id}")
-    public Course update(@PathVariable Long id, @RequestBody Course course) {
-        course.setId(id);
-        return repository.save(course);
+    public ResponseEntity<CourseDto> update(@PathVariable Long id, @RequestBody CourseDto dto) {
+        return ResponseEntity.ok(service.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        repository.deleteById(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,5 +1,6 @@
 package de.rochdi.lernportal_backend.dto;
 
+import de.rochdi.lernportal_backend.entity.CourseEntity;
 import lombok.Getter;
 import lombok.Setter;
 

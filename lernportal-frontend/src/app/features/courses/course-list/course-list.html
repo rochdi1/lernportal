@@ -1,0 +1,15 @@
+<div *ngIf="loading(); else content">Lade Kurse…</div>
+
+<ng-template #content>
+  <div *ngIf="error()" class="error">{{ error() }}</div>
+
+  <ul *ngIf="courses().length > 0">
+    <li *ngFor="let course of courses()">
+      {{ course.title }} – {{ course.description }}
+    </li>
+  </ul>
+
+  <p *ngIf="!loading() && !error() && courses().length === 0">
+    Keine Kurse vorhanden.
+  </p>
+</ng-template>

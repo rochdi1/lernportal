@@ -319,15 +319,18 @@ flowchart LR
 ## 📚 References
 
 - Existing docs: `00-UEBERSICHT.md`, `01-FRONTEND-SICHTBARKEIT.md`, etc.
-- CI/CD workflows (to be created):
-  - `.github/workflows/ci.yml` (extended)
-  - `.github/workflows/cd-kubectl.yml`
-  - `.github/workflows/cd-helm.yml`
-  - `.github/workflows/cd-argocd.yml`
+- CI/CD workflows:
+  - `.github/workflows/ci.yml` – backend + frontend tests on self-hosted runner
+  - `.github/workflows/cd-kubectl.yml` – docker build/push + deploy (Kustomize, dev/prod)
+  - `.github/workflows/cd-helm.yml` – docker build/push + deploy (Helm, dev/prod)
+  - `.github/workflows/cd-argocd.yml` – docker build/push + ArgoCD sync (dev/prod)
+- Local infra:
+  - `docker-compose.sonarqube.yml`
+  - `sonar-project.properties`
+  - Minikube setup
 - Dockerfiles: `lernportal-backend/Dockerfile`, `lernportal-frontend/Dockerfile`
 - K8s manifests: `k8s/` (Kustomize structure)
 - Helm charts: `helm/backend/`, `helm/frontend/`
-- SonarQube config: `sonar-project.properties`
 - Self-hosted runner setup: [GitHub Docs](https://docs.github.com/en/actions/hosting-your-own-runners)
 
 ---

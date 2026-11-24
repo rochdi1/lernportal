@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/frontend-*'
+      - 'feat/backend-*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend:
+    name: Backend (Java/Spring Boot)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lernportal-backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Run backend tests
+        run: ./gradlew test
+
+  frontend:
+    name: Frontend (Angular)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lernportal-frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run frontend tests
+        run: npx ng test --watch=false

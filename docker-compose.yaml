@@ -22,7 +22,7 @@ services:
 
   java-core:
     build:
-      context: ./services/java-core
+      context: ./lernportal-backend
     container_name: learning-java-core
     #restart: unless-stopped
     environment:
@@ -41,7 +41,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend-angular
+      context: ./lernportal-frontend
     container_name: learning-frontend
     #restart: unless-stopped
     ports:

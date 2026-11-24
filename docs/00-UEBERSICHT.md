@@ -64,9 +64,9 @@ flowchart TD
 
 | ID | Task | Phase | Status | Detail-MD | Unit-Tests |
 |----|------|-------|--------|-----------|------------|
-| 1.1 | `app.html` bereinigen | Frontend | ⬜ offen | [01-FRONTEND-SICHTBARKEIT.md](./01-FRONTEND-SICHTBARKEIT.md) | – |
-| 1.2 | `course-list.html` bereinern | Frontend | ⬜ offen | [01-FRONTEND-SICHTBARKEIT.md](./01-FRONTEND-SICHTBARKEIT.md) | ja |
-| 1.3 | Loading/Error-State | Frontend | ⬜ offen | [01-FRONTEND-SICHTBARKEIT.md](./01-FRONTEND-SICHTBARKEIT.md) | ja |
+| 1.1 | `app.html` bereinigen | Frontend | ✅ erledigt | [01-FRONTEND-SICHTBARKEIT.md](./01-FRONTEND-SICHTBARKEIT.md) | – |
+| 1.2 | `course-list.html` bereinern | Frontend | ✅ erledigt | [01-FRONTEND-SICHTBARKEIT.md](./01-FRONTEND-SICHTBARKEIT.md) | ja |
+| 1.3 | Loading/Error-State | Frontend | ✅ erledigt | [01-FRONTEND-SICHTBARKEIT.md](./01-FRONTEND-SICHTBARKEIT.md) | ja |
 | 2.1 | Service-Layer / DTOs | Backend | ⬜ offen | [02-BACKEND-QUALITAET.md](./02-BACKEND-QUALITAET.md) | ja |
 | 2.2 | Controller-Tests | Backend | ⬜ offen | [02-BACKEND-QUALITAET.md](./02-BACKEND-QUALITAET.md) | ja |
 | 3.1 | Quiz-Modul (Backend) | Quiz | ⬜ offen | [03-QUIZ-MODUL.md](./03-QUIZ-MODUL.md) | ja |

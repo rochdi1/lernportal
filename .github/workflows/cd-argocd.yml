@@ -145,21 +145,41 @@ jobs:
           mkdir -p /home/casa/.kube
           echo "${{ secrets.KUBECONFIG }}" > /home/casa/.kube/config
           chmod 600 /home/casa/.kube/config
-      - name: Login to ArgoCD
+      - name: Port-forward ArgoCD server, login & sync
+        env:
+          ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+          ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
+          ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
+          APP: ${{ matrix.app }}
         run: |
-          SERVER="${{ secrets.ARGOCD_SERVER }}"
-          # Strip protocol prefix to avoid gRPC-web proxy "too many colons in address" error
+          # Start persistent port-forward in background
+          nohup kubectl port-forward svc/argocd-server -n argocd 8081:80 > /tmp/argocd-pf.log 2>&1 &
+          PF_PID=$!
+          echo "Port-forward started (PID: $PF_PID) on 127.0.0.1:8081"
+          # Wait for port-forward to become ready (max 30s)
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://127.0.0.1:8081/api/v1/applications 2>/dev/null; then
+              echo "ArgoCD API reachable"
+              break
+            fi
+            sleep 1
+            if [ $i -eq 30 ]; then
+              echo "Timeout: ArgoCD not reachable after 30s"
+              cat /tmp/argocd-pf.log
+              exit 1
+            fi
+          done
+          # Prepare server address (strip protocol if present)
+          SERVER="$ARGOCD_SERVER"
           SERVER="${SERVER#http://}"
           SERVER="${SERVER#https://}"
+          echo "Logging in to $SERVER..."
           /home/casa/.local/bin/argocd login "$SERVER" \
-            --username ${{ secrets.ARGOCD_USERNAME }} \
-            --password ${{ secrets.ARGOCD_PASSWORD }} \
+            --username "$ARGOCD_USERNAME" \
+            --password "$ARGOCD_PASSWORD" \
             --grpc-web --insecure
-      - name: Update image in ArgoCD
-        run: |
-          /home/casa/.local/bin/argocd app set ${{ matrix.app }} \
+          echo "Updating app ${APP}..."
+          /home/casa/.local/bin/argocd app set "${APP}" \
             --parameter "image.tag=${{ github.sha }}"
-          /home/casa/.local/bin/argocd app sync ${{ matrix.app }} \
-            --prune
-          /home/casa/.local/bin/argocd app wait ${{ matrix.app }} \
-            --health
+          /home/casa/.local/bin/argocd app sync "${APP}" --prune
+          /home/casa/.local/bin/argocd app wait "${APP}" --health

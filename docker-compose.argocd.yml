@@ -1,0 +1,47 @@
+services:
+  argocd-installer:
+    image: alpine/k8s:1.37.2
+    container_name: argocd-installer
+    networks:
+      - minikube
+    environment:
+      - KUBECONFIG=/root/.kube/config
+    volumes:
+      - ${HOME}/.kube:/root/.kube:ro
+      # Gleicher Pfad wie auf dem Host, damit Zertifikatspfade in der kubeconfig stimmen
+      - ${HOME}/.minikube:${HOME}/.minikube:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        helm repo add --force-update argo https://argoproj.github.io/argo-helm
+        helm repo update
+        helm upgrade --install argocd argo/argo-cd \
+          --namespace argocd \
+          --create-namespace \
+          --set 'configs.params.server\.insecure=true' \
+          --wait
+
+  # Optionaler Helper-Container für Port-Forwarding zur ArgoCD Web-UI
+  argocd-ui:
+    image: alpine/k8s:1.37.2
+    container_name: argocd-ui
+    networks:
+      - minikube
+    environment:
+      - KUBECONFIG=/root/.kube/config
+    volumes:
+      - ${HOME}/.kube:/root/.kube:ro
+      - ${HOME}/.minikube:${HOME}/.minikube:ro
+    ports:
+      - "8081:8081"
+    entrypoint: ["kubectl", "port-forward", "--address", "0.0.0.0", "svc/argocd-server", "-n", "argocd", "8081:80"]
+    depends_on:
+      argocd-installer:
+        condition: service_completed_successfully
+
+networks:
+  minikube:
+    external: true
+
+#kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+#AvryzyCBIKbn37IM

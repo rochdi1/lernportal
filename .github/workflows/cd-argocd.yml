@@ -147,10 +147,14 @@ jobs:
           chmod 600 /home/casa/.kube/config
       - name: Login to ArgoCD
         run: |
-          /home/casa/.local/bin/argocd login ${{ secrets.ARGOCD_SERVER }} \
+          SERVER="${{ secrets.ARGOCD_SERVER }}"
+          # Strip protocol prefix to avoid gRPC-web proxy "too many colons in address" error
+          SERVER="${SERVER#http://}"
+          SERVER="${SERVER#https://}"
+          /home/casa/.local/bin/argocd login "$SERVER" \
             --username ${{ secrets.ARGOCD_USERNAME }} \
             --password ${{ secrets.ARGOCD_PASSWORD }} \
-            --grpc-web
+            --grpc-web --insecure
       - name: Update image in ArgoCD
         run: |
           /home/casa/.local/bin/argocd app set ${{ matrix.app }} \

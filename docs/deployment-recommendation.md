@@ -139,6 +139,17 @@ networks:
 
 Start: `docker compose -f docker-compose.sonarqube.yml up -d`
 
+```bash
+# Im Repo-Root ausführen
+cd /home/casa/AI_Project/JavaAngular
+
+# Alles runterfahren und Volumes löschen
+docker compose -f docker-compose.sonarqube.yml down -v
+
+# SonarQube + Postgres neu starten
+docker compose -f docker-compose.sonarqube.yml up -d
+```
+
 ### Minikube
 
 ```bash

@@ -59,6 +59,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Build backend (Gradle)
+        working-directory: lernportal-backend
+        run: ./gradlew build -x test  
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@master
         env:

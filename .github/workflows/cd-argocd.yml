@@ -100,9 +100,7 @@ jobs:
           images: |
             ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
             ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
-          tags: |
-            type=sha
-            type=raw,value=latest
+          tags: type=sha,type=raw,value=latest
       - name: Build and push backend image
         uses: docker/build-push-action@v6
         with:
@@ -113,8 +111,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:cache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:cache,mode=max
-          build-args: |
-            GITHUB_SHA=${{ github.sha }}
+          build-args: GITHUB_SHA=${{ github.sha }}
       - name: Build and push frontend image
         uses: docker/build-push-action@v6
         with:
@@ -125,8 +122,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:cache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:cache,mode=max
-          build-args: |
-            GITHUB_SHA=${{ github.sha }}
+          build-args: GITHUB_SHA=${{ github.sha }}
 
   update-argocd:
     name: Sync ArgoCD Application
@@ -140,26 +136,26 @@ jobs:
         uses: actions/checkout@v4
       - name: Install ArgoCD CLI
         run: |
-          curl -sSL -o /tmp/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          chmod +x /tmp/argocd
-          sudo mv /tmp/argocd /usr/local/bin/argocd
-          argocd version
+          mkdir -p /home/casa/.local/bin
+          curl -sSL -o /home/casa/.local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x /home/casa/.local/bin/argocd
+          /home/casa/.local/bin/argocd version
       - name: Configure kubectl context
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
+          mkdir -p /home/casa/.kube
+          echo "${{ secrets.KUBECONFIG }}" > /home/casa/.kube/config
+          chmod 600 /home/casa/.kube/config
       - name: Login to ArgoCD
         run: |
-          argocd login ${{ secrets.ARGOCD_SERVER }} \
+          /home/casa/.local/bin/argocd login ${{ secrets.ARGOCD_SERVER }} \
             --username ${{ secrets.ARGOCD_USERNAME }} \
             --password ${{ secrets.ARGOCD_PASSWORD }} \
             --grpc-web
       - name: Update image in ArgoCD
         run: |
-          argocd app set ${{ matrix.app }} \
+          /home/casa/.local/bin/argocd app set ${{ matrix.app }} \
             --parameter "image.tag=${{ github.sha }}"
-          argocd app sync ${{ matrix.app }} \
+          /home/casa/.local/bin/argocd app sync ${{ matrix.app }} \
             --prune
-          argocd app wait ${{ matrix.app }} \
+          /home/casa/.local/bin/argocd app wait ${{ matrix.app }} \
             --health

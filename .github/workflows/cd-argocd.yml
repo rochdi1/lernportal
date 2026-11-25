@@ -1,0 +1,129 @@
+name: CD - ArgoCD (GitOps)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment (dev|prod)
+        required: true
+        default: dev
+
+env:
+  REGISTRY: docker.io
+  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/lernportal-backend
+  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/lernportal-frontend
+
+jobs:
+  backend:
+    name: Backend Build & Test
+    runs-on: [self-hosted, local]
+    defaults:
+      run:
+        working-directory: lernportal-backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Run backend tests
+        run: ./gradlew test
+      - name: Build backend
+        run: ./gradlew build -x test
+
+  frontend:
+    name: Frontend Build & Test
+    runs-on: [self-hosted, local]
+    defaults:
+      run:
+        working-directory: lernportal-frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run frontend tests
+        run: npx ng test --watch=false
+      - name: Build frontend
+        run: npx ng build --configuration production
+
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: [self-hosted, local]
+    needs: [backend, frontend]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  docker:
+    name: Docker Build & Push
+    runs-on: [self-hosted, local]
+    needs: sonarqube
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./lernportal-backend
+          file: ./lernportal-backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./lernportal-frontend
+          file: ./lernportal-frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
+
+  update-argocd:
+    name: Sync ArgoCD Application
+    runs-on: [self-hosted, local]
+    needs: docker
+    strategy:
+      matrix:
+        app: [lernportal-dev, lernportal-prod]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Update image in ArgoCD
+        run: |
+          argocd login ${{ secrets.ARGOCD_SERVER }} \
+            --username ${{ secrets.ARGOCD_USERNAME }} \
+            --password ${{ secrets.ARGOCD_PASSWORD }} \
+            --grpc-web
+          argocd app set ${{ matrix.app }} \
+            --parameter "image.tag=${{ github.sha }}"
+          argocd app sync ${{ matrix.app }} \
+            --prune
+          argocd app wait ${{ matrix.app }} \
+            --health

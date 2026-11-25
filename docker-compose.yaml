@@ -23,7 +23,7 @@ services:
   backend:
     build:
       context: ./lernportal-backend
-    container_name: learning-java-core
+    container_name: learning-backend
     #restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-learning_dashboard}

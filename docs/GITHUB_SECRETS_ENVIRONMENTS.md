@@ -53,6 +53,54 @@ Gehe zu **Repo → Settings → Environments → New environment**.
 ### Umgebung `production` anlegen
 1. Klicke **New environment**, Name: `production`, füge **Required reviewers** hinzu, **Create environment**.
 
+### 4.1. Kubernetes‑Namespaces & ArgoCD‑Applications (alternativ via `kubectl apply`)
+
+Für das Lern‑/Test‑Setup reicht es, eine **Entwicklungsumgebung** (Namespace `lernportal-dev`) sowie **QS** und **Produktion** als separate Kubernetes‑Namespaces zu erstellen. Zusätzlich lege wir ArgoCD‑Applications‑Resources an, die jeweils das richtige Overlay des Git‑Repo verweisen.
+
+> **Hinweis:** GitHub‑Environments (`development`, `QS`, `production`) steuern lediglich die Deployment‑Gate‑/Approval‑Logik in der Workflow‑Pipeline. Die Kubernetes‑Namespaces sind rein für das K8s‑Cluster selbst gedacht.
+
+#### 4.1.1. Namespaces erstellen (via kubectl)
+
+```bash
+kubectl create namespace lernportal-dev --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace lernportal-qs   --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace lernportal-prod --dry-run=client -o yaml | kubectl apply -f -
+```
+
+#### 4.1.2. ArgoCD‑Application‑Manifeste (via kubectl apply)
+
+**Beispiel `application-dev.yaml`**
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lernportal-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/rochdi1/lernportal.git
+    targetRevision: HEAD
+    path: k8s/overlays/development
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: lernportal-dev
+  syncPolicy:
+    syncOnly:
+      - group: apps
+        kind: Deployment
+        srcPaths:
+          - k8s/overlays/development
+```
+
+Analog definierst du für **QS** und **Produktion**:
+
+- `application-qs.yaml` → `path: k8s/overlays/qs`, Destination Namespace `lernportal-qs`.
+- `application-prod.yaml` → `path: k8s/overlays/production`, Destination Namespace `lernportal-prod`.
+
+> **Deployment‑Strategie:** In den jeweiligen Overlay‑Ordnern (`k8s/overlays/<env>`) findest du die Kubernetes‑Manifests (Deployments, Services, ConfigMaps, Secrets‑Refs). ArgoCD synchronisiert diese über Git‑Source.
+
 ## 5. Secrets sind NICHT im Repository zu speichern
 
 ⚠️ Geheimnisse dürfen niemals in Dateien (z.B. `.env`, `config.yml`) im Git-Repository gespeichert werden.

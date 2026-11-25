@@ -86,12 +86,19 @@ SonarScanner exited with code 1
 - Java 25, Node 22
 - Self‑hosted runner running locally (`local-runner`)
 
-### Install ArgoCD (Helm)
+### Install ArgoCD (Helm – recommended)
 ```bash
 helm repo add argo https://argoproj.github.io/helm-charts
 helm repo update
 helm install argocd argo/argo-cd -n argocd --create-namespace
 ```
+
+> **Alternative (kubectl apply) – not used for this learning setup:**
+> ```bash
+> kubectl create namespace argocd
+> kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+> ```
+> If you use `kubectl apply`, you may need to apply additional CRDs manually. Helm is simpler.
 
 ### Port‑forward for local access
 ```bash
@@ -111,7 +118,7 @@ These must be set as GitHub Secrets.
 
 ## 5. Secrets & Environments
 
-Full details are in **`.github/workflows/GITHUB_SECRETS_ENVIRONMENTS.md`** (or the updated version at `/home/casa/AI_Project/JavaAngular/docs/GITHUB_SECRETS_ENVIRONMENTS.md`).
+Full details are in **`docs/GITHUB_SECRETS_ENVIRONMENTS.md`** (updated).
 
 Key secrets:
 
@@ -142,7 +149,60 @@ Since the project already has a pipeline for builds and tests, ArgoCD is the log
 
 ---
 
-## 7. Next Steps
+## 7. Multi‑Environment Setup (dev, QS, prod)
+
+ArgoCD can manage multiple **Apps** per environment. For the Lernportal we use three Kubernetes namespaces:
+
+| Environment | Kubernetes Namespace | ArgoCD Application Name | Overlay Path |
+|-------------|----------------------|-------------------------|--------------|
+| `development` | `lernportal-dev` | `lernportal-dev` | `k8s/overlays/development` |
+| `QS`          | `lernportal-qs`   | `lernportal-qs`         | `k8s/overlays/qs`    |
+| `production`  | `lernportal-prod`  | `lernportal-prod`       | `k8s/overlays/production` |
+
+### 7.1. Create namespaces (once)
+```bash
+kubectl create namespace lernportal-dev --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace lernportal-qs   --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace lernportal-prod --dry-run=client -o yaml | kubectl apply -f -
+```
+
+### 7.2. ArgoCD Applications (via `kubectl apply`)
+
+**Example `application-dev.yaml`**
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: lernportal-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/rochdi1/lernportal.git
+    targetRevision: HEAD
+    path: k8s/overlays/development
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: lernportal-dev
+  syncPolicy:
+    syncOnly:
+      - group: apps
+        kind: Deployment
+        srcPaths:
+          - k8s/overlays/development
+```
+
+Analog define for QS and Production:
+
+- `application-qs.yaml` → `path: k8s/overlays/qs`, Destination Namespace `lernportal-qs`.
+- `application-prod.yaml` → `path: k8s/overlays/production`, Destination Namespace `lernportal-prod`.
+
+> **Deployment‑Strategie:** In the respective overlay directories (`k8s/overlays/<env>`) you find the Kubernetes manifests (Deployments, Services, ConfigMaps, Secrets‑Refs). ArgoCD synchronizes them via Git‑source.
+
+---
+
+## 8. Next Steps
 
 1. **Add the three missing GitHub Secrets** (`ARGOCD_SERVER`, `ARGOCD_USERNAME`, `ARGOCD_PASSWORD`) via the GitHub UI.  
 2. **Start the local runner** (if not already running).  
@@ -153,7 +213,7 @@ If any error persists (e.g., `sonar.java.binaries` or `argocd: command not found
 
 ---
 
-## 8. Quick Cheat‑Sheet
+## 9. Quick Cheat‑Sheet
 
 ```bash
 # Install ArgoCD in Minikube
@@ -174,7 +234,7 @@ git push origin feat/github-actions-local-pipeline
 
 ---
 
-## 9. References
+## 10. References
 
 - `docs/deployment-recommendation.md`
 - `docs/SETUP_SELF_HOSTED_RUNNER.md`
@@ -185,3 +245,4 @@ git push origin feat/github-actions-local-pipeline
 - `.github/workflows/cd-kubectl.yml`
 
 ---
+*Generated on 2026‑11‑25*

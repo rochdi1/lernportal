@@ -20,18 +20,22 @@ Make sure you have git configured with username/password.
 
 ## 1. Install ArgoCD in Minikube
 
-### Option A – Helm
+> **Empfohlene Methode (nur Helm)** – Für ein minimales, reproduzierbares Setup nutzen wir ausschließlich Helm. Die manuelle `kubectl apply`‑Variante ist als Alternative dokumentiert, wird aber aktuell nicht verwendet.
+
+### Option A – Helm (empfohlen)
 ```bash
 helm repo add argo https://argoproj.github.io/helm-charts
 helm repo update
 helm install argocd argo/argo-cd -n argocd --create-namespace
 ```
 
-### Option B – Kustomize / OCI manifest
+### Option B – Kustomize / OCI manifest (Alternative)
 ```bash
 kubectl create namespace argocd
 kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 ```
+
+> **Hinweis:** Wenn du Option B verwendest, musst du ggf. zusätzliche CRDs manuell anwenden. Für das Lern‑Setup bleibt Helm der einfachere Weg.
 
 After installation, verify the ArgoCD Service:
 ```bash
